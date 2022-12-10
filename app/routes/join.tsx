@@ -59,6 +59,29 @@ export async function action({ request }: ActionArgs) {
       { status: 400 },
     )
   }
+
+  try {
+    const siweMessage = new SiweMessage(message)
+    // next line does the trick
+    await siweMessage.validate(signature) // this will throw if it's invalid
+
+    const cookieHeader = request.headers.get("Cookie")
+    const cookie = (await nonce.parse(cookieHeader)) || {}
+
+    if (siweMessage.nonce !== cookie.nonce) {
+      return json(
+        {
+          errors: {
+            nonce: "Invalid nonce",
+            account: null,
+            message: null,
+            signature: null,
+          },
+        },
+        { status: 422 },
+      )
+    }
+  } catch (error) {}
 }
 
 export async function loader({ request }: LoaderArgs) {
