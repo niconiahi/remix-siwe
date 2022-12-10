@@ -3,7 +3,7 @@ import { ActionArgs, json, LoaderArgs } from "@remix-run/node"
 import { Form,  useLoaderData } from "@remix-run/react"
 import type { JsonRpcSigner } from "@ethersproject/providers"
 import { Web3Provider } from "@ethersproject/providers"
-import { SiweMessage } from "siwe"
+import { ErrorTypes, SiweMessage } from "siwe"
 import { generateNonce } from "siwe"
 import { createUser } from "~/models/user.server"
 import { createUserSession } from "~/session.server"
@@ -25,6 +25,8 @@ export async function action({ request }: ActionArgs) {
           account: null,
           message: "Message is required",
           signature: null,
+          expired: null,
+          valid: null,
         },
       },
       { status: 400 },
@@ -39,6 +41,8 @@ export async function action({ request }: ActionArgs) {
           account: "A connected account is required",
           message: null,
           signature: null,
+          expired: null,
+          valid: null,
         },
       },
       { status: 400 },
@@ -53,6 +57,8 @@ export async function action({ request }: ActionArgs) {
           account: null,
           message: null,
           signature: "Signature is required",
+          expired: null,
+          valid: null,
         },
       },
       { status: 400 },
@@ -75,13 +81,49 @@ export async function action({ request }: ActionArgs) {
             account: null,
             message: null,
             signature: null,
+            expired: null,
+            valid: null,
           },
         },
         { status: 422 },
       )
     }
   } catch (error) {
-
+    switch (error) {
+      case ErrorTypes.EXPIRED_MESSAGE: {
+        return json(
+          {
+            errors: {
+              nonce: null,
+              account: null,
+              message: null,
+              signature: null,
+              expired: "Your sesion has expired",
+              valid: null,
+            },
+          },
+          { status: 400 },
+        )
+      }
+      case ErrorTypes.INVALID_SIGNATURE: {
+        return json(
+          {
+            errors: {
+              nonce: null,
+              account: null,
+              message: null,
+              signature: null,
+              expired: null,
+              valid: "Your signature is invalid",
+            },
+          },
+          { status: 400 },
+        )
+      }
+      default: {
+        break
+      }
+    }
   }
 
   const user = await createUser(account)
