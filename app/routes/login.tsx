@@ -1,11 +1,10 @@
 import { useState } from "react"
 import { ActionArgs, json, LoaderArgs } from "@remix-run/node"
-import { Form,  useLoaderData, useSearchParams } from "@remix-run/react"
+import { Form,  useLoaderData } from "@remix-run/react"
 import type { JsonRpcSigner } from "@ethersproject/providers"
 import { Web3Provider } from "@ethersproject/providers"
 import { ErrorTypes, SiweMessage } from "siwe"
 import { generateNonce } from "siwe"
-import { createUser, getUserByAddress } from "~/models/user.server"
 import { createUserSession } from "~/utils/session.server"
 import { safeRedirect } from "~/utils/routing.server"
 import { nonceCookie} from "~/utils/cookies.server"
@@ -127,25 +126,12 @@ export async function action({ request }: ActionArgs) {
     }
   }
 
-  const prevUser = await getUserByAddress(account)
-
-  if (!prevUser) {
-    const user = await createUser(account)
-
-    return createUserSession({
-      request,
-      userAddress: user.address,
-      remember: true,
-      redirectTo
-    })
-  } else {
-    return createUserSession({
-      request,
-      userAddress: prevUser.address,
-      remember: true,
-      redirectTo
-    })
-  }
+  return createUserSession({
+    request,
+    userAddress: account,
+    remember: true,
+    redirectTo
+  })
 }
 
 export async function loader({ request }: LoaderArgs) {
@@ -173,7 +159,7 @@ export async function loader({ request }: LoaderArgs) {
   })
 }
 
-export default function JoinPage() {
+export default function LoginPage() {
   const { nonce } = useLoaderData<typeof loader>()
   const provider = useProvider()
   const connectMetamask = useConnectMetamask(provider)
