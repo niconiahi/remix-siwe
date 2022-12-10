@@ -126,21 +126,21 @@ export async function action({ request }: ActionArgs) {
     }
   }
 
-  const user = await getUserByAddress(account)
+  const prevUser = await getUserByAddress(account)
 
-  if (!user) {
-    const nextUser = await createUser(account)
+  if (!prevUser) {
+    const user = await createUser(account)
 
     return createUserSession({
       request,
-      userAddress: nextUser.address,
+      userAddress: user.address,
       remember: true,
       redirectTo
     })
   } else {
     return createUserSession({
       request,
-      userAddress: user.address,
+      userAddress: prevUser.address,
       remember: true,
       redirectTo
     })
