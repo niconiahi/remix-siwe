@@ -1,19 +1,18 @@
 import { useState } from "react"
 import { ActionArgs, json, LoaderArgs } from "@remix-run/node"
-import { Form, useActionData, useLoaderData } from "@remix-run/react"
+import { Form,  useLoaderData } from "@remix-run/react"
 import type { JsonRpcSigner } from "@ethersproject/providers"
 import { Web3Provider } from "@ethersproject/providers"
 import { SiweMessage } from "siwe"
-import { createCookie } from "@remix-run/node"
 import { generateNonce } from "siwe"
-
-const nonce = createCookie("nonce", {
-  maxAge: 604_800,
-})
+import { createUser } from "~/models/user.server"
+import { createUserSession } from "~/session.server"
+import { safeRedirect } from "~/utils/routing.server"
+import { nonceCookie} from "~/utils/cookies.server"
 
 export async function action({ request }: ActionArgs) {
   const formData = await request.formData()
-
+  const redirectTo = safeRedirect(formData.get("redirectTo"), "/")
   const message = formData.get("message")
   const account = formData.get("account")
   const signature = formData.get("signature")
@@ -62,11 +61,11 @@ export async function action({ request }: ActionArgs) {
 
   try {
     const siweMessage = new SiweMessage(message)
-    // next line does the trick
-    await siweMessage.validate(signature) // this will throw if it's invalid
+    // next line does the trick. It will throw if it's invalid
+    await siweMessage.validate(signature)
 
     const cookieHeader = request.headers.get("Cookie")
-    const cookie = (await nonce.parse(cookieHeader)) || {}
+    const cookie = (await nonceCookie.parse(cookieHeader)) || {}
 
     if (siweMessage.nonce !== cookie.nonce) {
       return json(
@@ -81,12 +80,23 @@ export async function action({ request }: ActionArgs) {
         { status: 422 },
       )
     }
-  } catch (error) {}
+  } catch (error) {
+
+  }
+
+  const user = await createUser(account)
+
+  return createUserSession({
+    request,
+    userAddress: user.address,
+    remember: true,
+    redirectTo
+  })
 }
 
 export async function loader({ request }: LoaderArgs) {
   const cookieHeader = request.headers.get("Cookie")
-  const cookie = (await nonce.parse(cookieHeader)) || {}
+  const cookie = (await nonceCookie.parse(cookieHeader)) || {}
 
   if (!cookie.nonce) {
     const nextNonce = generateNonce()
@@ -98,7 +108,7 @@ export async function loader({ request }: LoaderArgs) {
       },
       {
         headers: {
-          "Set-Cookie": await nonce.serialize(cookie),
+          "Set-Cookie": await nonceCookie.serialize(cookie),
         },
       },
     )
@@ -113,6 +123,7 @@ export default function JoinPage() {
   const { nonce } = useLoaderData<typeof loader>()
   const provider = useProvider()
   const connectMetamask = useConnectMetamask(provider)
+  const [account, setAccount] = useState<string | undefined>(undefined)
   const [message, setMessage] = useState<string | undefined>(undefined)
   const [signature, setSignature] = useState<string | undefined>(undefined)
 
@@ -150,8 +161,9 @@ export default function JoinPage() {
           })
 
           const message = siweMessage.prepareMessage()
-          setMessage(message)
           setSignature(await signer.signMessage(message))
+          setMessage(message)
+          setAccount(account)
         }}
       >
         <span>2</span>
@@ -161,12 +173,13 @@ export default function JoinPage() {
       </button>
       <Form method="post">
         <input type="hidden" name="message" value={message} />
+        <input type="hidden" name="account" value={account} />
         <input type="hidden" name="signature" value={signature} />
         <button
           type="submit"
           name="_action"
           aria-label="Connect your wallet"
-          disabled={!provider}
+          disabled={Boolean(!message || !signature)}
         >
           <span>3</span>
           <h3>
