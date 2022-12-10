@@ -5,7 +5,7 @@ import type { JsonRpcSigner } from "@ethersproject/providers"
 import { Web3Provider } from "@ethersproject/providers"
 import { ErrorTypes, SiweMessage } from "siwe"
 import { generateNonce } from "siwe"
-import { createUser } from "~/models/user.server"
+import { createUser, getUserByAddress } from "~/models/user.server"
 import { createUserSession } from "~/session.server"
 import { safeRedirect } from "~/utils/routing.server"
 import { nonceCookie} from "~/utils/cookies.server"
@@ -126,14 +126,25 @@ export async function action({ request }: ActionArgs) {
     }
   }
 
-  const user = await createUser(account)
+  const user = await getUserByAddress(account)
 
-  return createUserSession({
-    request,
-    userAddress: user.address,
-    remember: true,
-    redirectTo
-  })
+  if (!user) {
+    const nextUser = await createUser(account)
+
+    return createUserSession({
+      request,
+      userAddress: nextUser.address,
+      remember: true,
+      redirectTo
+    })
+  } else {
+    return createUserSession({
+      request,
+      userAddress: user.address,
+      remember: true,
+      redirectTo
+    })
+  }
 }
 
 export async function loader({ request }: LoaderArgs) {
