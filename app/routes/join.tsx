@@ -1,6 +1,6 @@
 import { useState } from "react"
-import { json, LoaderArgs } from "@remix-run/node"
-import { Form, useLoaderData } from "@remix-run/react"
+import { ActionArgs, json, LoaderArgs } from "@remix-run/node"
+import { Form, useActionData, useLoaderData } from "@remix-run/react"
 import type { JsonRpcSigner } from "@ethersproject/providers"
 import { Web3Provider } from "@ethersproject/providers"
 import { SiweMessage } from "siwe"
@@ -10,6 +10,56 @@ import { generateNonce } from "siwe"
 const nonce = createCookie("nonce", {
   maxAge: 604_800,
 })
+
+export async function action({ request }: ActionArgs) {
+  const formData = await request.formData()
+
+  const message = formData.get("message")
+  const account = formData.get("account")
+  const signature = formData.get("signature")
+
+  if (typeof message !== "string") {
+    return json(
+      {
+        errors: {
+          nonce: null,
+          account: null,
+          message: "Message is required",
+          signature: null,
+        },
+      },
+      { status: 400 },
+    )
+  }
+
+  if (typeof account !== "string") {
+    return json(
+      {
+        errors: {
+          nonce: null,
+          account: "A connected account is required",
+          message: null,
+          signature: null,
+        },
+      },
+      { status: 400 },
+    )
+  }
+
+  if (typeof signature !== "string") {
+    return json(
+      {
+        errors: {
+          nonce: null,
+          account: null,
+          message: null,
+          signature: "Signature is required",
+        },
+      },
+      { status: 400 },
+    )
+  }
+}
 
 export async function loader({ request }: LoaderArgs) {
   const cookieHeader = request.headers.get("Cookie")
@@ -93,6 +143,7 @@ export default function JoinPage() {
           type="submit"
           name="_action"
           aria-label="Connect your wallet"
+          disabled={!provider}
         >
           <span>3</span>
           <h3>
