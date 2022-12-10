@@ -1,12 +1,39 @@
 import { useState } from "react"
-import { json } from "@remix-run/node"
+import { json, LoaderArgs } from "@remix-run/node"
 import { Form, useLoaderData } from "@remix-run/react"
 import type { JsonRpcSigner } from "@ethersproject/providers"
 import { Web3Provider } from "@ethersproject/providers"
 import { SiweMessage } from "siwe"
+import { createCookie } from "@remix-run/node"
+import { generateNonce } from "siwe"
 
-export function loader() {
-  return json({ nonce: "1" })
+const nonce = createCookie("nonce", {
+  maxAge: 604_800,
+})
+
+export async function loader({ request }: LoaderArgs) {
+  const cookieHeader = request.headers.get("Cookie")
+  const cookie = (await nonce.parse(cookieHeader)) || {}
+
+  if (!cookie.nonce) {
+    const nextNonce = generateNonce()
+    cookie.nonce = nextNonce
+
+    return json(
+      {
+        nonce: nextNonce,
+      },
+      {
+        headers: {
+          "Set-Cookie": await nonce.serialize(cookie),
+        },
+      },
+    )
+  }
+
+  return json({
+    nonce: cookie.nonce,
+  })
 }
 
 export default function JoinPage() {
