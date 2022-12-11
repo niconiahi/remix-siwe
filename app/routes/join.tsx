@@ -1,7 +1,7 @@
 import { useState } from "react"
-import type { ActionArgs, LoaderArgs } from "@remix-run/node";
+import type { ActionArgs, LoaderArgs } from "@remix-run/node"
 import { json } from "@remix-run/node"
-import { Form,  useLoaderData } from "@remix-run/react"
+import { Form, useLoaderData } from "@remix-run/react"
 import type { JsonRpcSigner } from "@ethersproject/providers"
 import { Web3Provider } from "@ethersproject/providers"
 import { ErrorTypes, SiweMessage } from "siwe"
@@ -9,13 +9,13 @@ import { generateNonce } from "siwe"
 import { createUser, getUserByAddress } from "~/models/user.server"
 import { createUserSession } from "~/utils/session.server"
 import { safeRedirect } from "~/utils/routing.server"
-import { nonceCookie} from "~/utils/cookies.server"
+import { nonceCookie } from "~/utils/cookies.server"
 import { PrimaryButton } from "~/components/primary-button"
-import { HomeButton } from "~/components/home-button";
+import { HomeButton } from "~/components/home-button"
 
 export async function action({ request }: ActionArgs) {
   const formData = await request.formData()
-	const url = new URL(request.url)
+  const url = new URL(request.url)
   const redirectTo = safeRedirect(url.searchParams.get("redirectTo"), "/")
   const message = formData.get("message")
   const account = formData.get("account")
@@ -139,14 +139,14 @@ export async function action({ request }: ActionArgs) {
       request,
       userAddress: user.address,
       remember: true,
-      redirectTo
+      redirectTo,
     })
   } else {
     return createUserSession({
       request,
       userAddress: prevUser.address,
       remember: true,
-      redirectTo
+      redirectTo,
     })
   }
 }
@@ -185,7 +185,7 @@ export default function JoinPage() {
   const [signature, setSignature] = useState<string | undefined>(undefined)
 
   return (
-    <main className="flex items-center justify-center h-full w-full space-x-2">
+    <main className="flex h-full w-full items-center justify-center space-x-2">
       <HomeButton />
       <PrimaryButton
         aria-label="Connect your wallet"
@@ -193,16 +193,16 @@ export default function JoinPage() {
         onClick={() => connectMetamask()}
       >
         <span>1</span>
-        <h3>
-          Connect your wallet
-        </h3>
+        <h3>Connect your wallet</h3>
       </PrimaryButton>
       <PrimaryButton
         aria-label="Generate personal signature"
         disabled={Boolean(!provider) || Boolean(signature)}
         onClick={async () => {
           if (!provider) {
-            alert('You need to have Metamask connected to create your signature')
+            alert(
+              "You need to have Metamask connected to create your signature",
+            )
 
             return
           }
@@ -227,9 +227,7 @@ export default function JoinPage() {
         }}
       >
         <span>2</span>
-        <h3>
-          Generate personal signature
-        </h3>
+        <h3>Generate personal signature</h3>
       </PrimaryButton>
       <Form method="post">
         <input type="hidden" name="message" value={message} />
@@ -242,20 +240,19 @@ export default function JoinPage() {
           disabled={Boolean(!message || !signature)}
         >
           <span>3</span>
-          <h3>
-            Join
-          </h3>
+          <h3>Join</h3>
         </PrimaryButton>
       </Form>
     </main>
   )
 }
 
-
 function useProvider() {
   if (typeof window === "undefined") return
 
-  return (window as any)?.ethereum ? new Web3Provider((window as any).ethereum) : undefined
+  return (window as any)?.ethereum
+    ? new Web3Provider((window as any).ethereum)
+    : undefined
 }
 
 async function getAccount(provider: Web3Provider): Promise<string> {
@@ -266,17 +263,18 @@ function getSigner(provider: Web3Provider): JsonRpcSigner {
   return provider.getSigner()
 }
 
-
-export function useConnectMetamask(provider: Web3Provider | undefined): () => void {
+export function useConnectMetamask(
+  provider: Web3Provider | undefined,
+): () => void {
   async function connectMetamask() {
     if (!provider) {
-      alert('You need Metamask to use this application')
+      alert("You need Metamask to use this application")
 
       return
     }
 
     await provider.send("eth_requestAccounts", []).then(() => {
-      alert('Metamask connected')
+      alert("Metamask connected")
     })
   }
 

@@ -1,4 +1,4 @@
-import { User } from "@prisma/client"
+import type { User } from "@prisma/client"
 import { createCookieSessionStorage, redirect } from "@remix-run/node"
 import invariant from "tiny-invariant"
 import { getUserByAddress } from "~/models/user.server"
