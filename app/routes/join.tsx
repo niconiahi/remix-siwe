@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { ActionArgs, json, LoaderArgs } from "@remix-run/node"
-import { Form,  useLoaderData, useSearchParams } from "@remix-run/react"
+import { Form,  useLoaderData } from "@remix-run/react"
 import type { JsonRpcSigner } from "@ethersproject/providers"
 import { Web3Provider } from "@ethersproject/providers"
 import { ErrorTypes, SiweMessage } from "siwe"
