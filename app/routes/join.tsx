@@ -1,5 +1,6 @@
 import { useState } from "react"
-import { ActionArgs, json, LoaderArgs } from "@remix-run/node"
+import type { ActionArgs, LoaderArgs } from "@remix-run/node";
+import { json } from "@remix-run/node"
 import { Form,  useLoaderData } from "@remix-run/react"
 import type { JsonRpcSigner } from "@ethersproject/providers"
 import { Web3Provider } from "@ethersproject/providers"
@@ -9,6 +10,8 @@ import { createUser, getUserByAddress } from "~/models/user.server"
 import { createUserSession } from "~/utils/session.server"
 import { safeRedirect } from "~/utils/routing.server"
 import { nonceCookie} from "~/utils/cookies.server"
+import { PrimaryButton } from "~/components/primary-button"
+import { HomeButton } from "~/components/home-button";
 
 export async function action({ request }: ActionArgs) {
   const formData = await request.formData()
@@ -182,18 +185,21 @@ export default function JoinPage() {
   const [signature, setSignature] = useState<string | undefined>(undefined)
 
   return (
-    <main>
-      <button
+    <main className="flex items-center justify-center h-full w-full space-x-2">
+      <HomeButton />
+      <PrimaryButton
         aria-label="Connect your wallet"
+        disabled={Boolean(provider)}
         onClick={() => connectMetamask()}
       >
         <span>1</span>
         <h3>
           Connect your wallet
         </h3>
-      </button>
-      <button
+      </PrimaryButton>
+      <PrimaryButton
         aria-label="Generate personal signature"
+        disabled={Boolean(!provider) || Boolean(signature)}
         onClick={async () => {
           if (!provider) {
             alert('You need to have Metamask connected to create your signature')
@@ -224,12 +230,12 @@ export default function JoinPage() {
         <h3>
           Generate personal signature
         </h3>
-      </button>
+      </PrimaryButton>
       <Form method="post">
         <input type="hidden" name="message" value={message} />
         <input type="hidden" name="account" value={account} />
         <input type="hidden" name="signature" value={signature} />
-        <button
+        <PrimaryButton
           type="submit"
           name="_action"
           aria-label="Connect your wallet"
@@ -237,9 +243,9 @@ export default function JoinPage() {
         >
           <span>3</span>
           <h3>
-            Connect your wallet
+            Join
           </h3>
-        </button>
+        </PrimaryButton>
       </Form>
     </main>
   )
