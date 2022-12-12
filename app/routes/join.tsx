@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import type { ActionArgs, LoaderArgs } from "@remix-run/node"
 import { json } from "@remix-run/node"
 import { Form, useLoaderData } from "@remix-run/react"
@@ -178,8 +178,7 @@ export async function loader({ request }: LoaderArgs) {
 
 export default function JoinPage() {
   const { nonce } = useLoaderData<typeof loader>()
-  const provider = useProvider()
-  const connectMetamask = useConnectMetamask(provider)
+  const { connectProvider, provider } = useProvider()
   const [account, setAccount] = useState<string | undefined>(undefined)
   const [message, setMessage] = useState<string | undefined>(undefined)
   const [signature, setSignature] = useState<string | undefined>(undefined)
@@ -190,7 +189,7 @@ export default function JoinPage() {
       <PrimaryButton
         aria-label="Connect your wallet"
         disabled={Boolean(provider)}
-        onClick={() => connectMetamask()}
+        onClick={() => connectProvider()}
       >
         <span>1</span>
         <h3>Connect your wallet</h3>
@@ -247,12 +246,49 @@ export default function JoinPage() {
   )
 }
 
-function useProvider() {
-  if (typeof window === "undefined") return
+function useProvider(): {
+  provider: Web3Provider | undefined
+  connectProvider: () => void
+} {
+  const [provider, setProvider] = useState<Web3Provider | undefined>(undefined)
 
-  return (window as any)?.ethereum
-    ? new Web3Provider((window as any).ethereum)
-    : undefined
+  async function getProvider() {
+    if ((window as any)?.ethereum) {
+      const provider = new Web3Provider((window as any).ethereum)
+      const account = await getAccount(provider)
+
+      if (!account) return setProvider(undefined)
+
+      setProvider(provider)
+    } else {
+      setProvider(undefined)
+    }
+  }
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    getProvider()
+  }, [])
+
+  function connectProvider() {
+    new Web3Provider((window as any).ethereum)
+      .send("eth_requestAccounts", [])
+      .then(() => {
+        if (provider) return
+
+        getProvider()
+      })
+      .catch((error) => {
+        if (error.code === -32002) {
+          alert(
+            "You have already connected Metamask to the application. Click on the Metamask extension and type your password",
+          )
+        }
+      })
+  }
+
+  return { provider, connectProvider }
 }
 
 async function getAccount(provider: Web3Provider): Promise<string> {
@@ -261,22 +297,4 @@ async function getAccount(provider: Web3Provider): Promise<string> {
 
 function getSigner(provider: Web3Provider): JsonRpcSigner {
   return provider.getSigner()
-}
-
-export function useConnectMetamask(
-  provider: Web3Provider | undefined,
-): () => void {
-  async function connectMetamask() {
-    if (!provider) {
-      alert("You need Metamask to use this application")
-
-      return
-    }
-
-    await provider.send("eth_requestAccounts", []).then(() => {
-      alert("Metamask connected")
-    })
-  }
-
-  return connectMetamask
 }
