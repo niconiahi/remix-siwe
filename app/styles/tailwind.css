@@ -341,21 +341,17 @@ video {
   display: flex;
 }.hidden {
   display: none;
-}.h-8 {
-  height: 2rem;
-}.h-full {
-  height: 100%;
 }.h-6 {
   height: 1.5rem;
-}.w-8 {
-  width: 2rem;
+}.h-full {
+  height: 100%;
+}.w-6 {
+  width: 1.5rem;
 }.w-full {
   width: 100%;
 }.w-fit {
   width: -moz-fit-content;
   width: fit-content;
-}.w-6 {
-  width: 1.5rem;
 }.translate-y-2 {
   --tw-translate-y: 0.5rem;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
