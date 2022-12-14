@@ -4,14 +4,19 @@
   "scripts": {
     "start": "cross-env NODE_ENV=production netlify dev",
     "typecheck": "tsc -b",
-    "build": "run-s \"build:*\"",
+    "build": "run-s build:*",
     "build:css": "npm run gen:css -- --minify",
     "build:remix": "remix build",
     "lint": "eslint . -c .eslintrc.js --ext ts,tsx",
     "lint:fix": "npm run lint -- --fix",
-    "dev": "run-p \"dev:*\"",
+    "dev": "run-p dev:*",
+    "dev:db": "npm run db:run:dev",
     "dev:css": "npm run gen:css -- --watch",
     "dev:remix": "remix dev",
+    "db:update": "npx prisma db push",
+    "db:inspect": "npx prisma studio",
+    "db:run:dev": "pscale connect animatronik dev --port 3309",
+    "db:run:main": "pscale connect animatronik main --port 3309",
     "gen:css": "postcss styles --base styles --dir app/styles"
   },
   "dependencies": {
