@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import type { ActionArgs, LoaderArgs } from "@remix-run/node"
+import { redirect } from "@remix-run/node"
 import { json } from "@remix-run/node"
 import { Form, useLoaderData } from "@remix-run/react"
 import type { JsonRpcSigner } from "@ethersproject/providers"
@@ -11,6 +12,7 @@ import { safeRedirect } from "~/utils/routing.server"
 import { nonceCookie } from "~/utils/cookies.server"
 import { PrimaryButton } from "~/components/primary-button"
 import { HomeButton } from "~/components/home-button"
+import { getUserByAddress } from "~/models/user.server"
 
 export async function action({ request }: ActionArgs) {
   const formData = await request.formData()
@@ -129,12 +131,18 @@ export async function action({ request }: ActionArgs) {
     }
   }
 
-  return createUserSession({
-    request,
-    userAddress: account,
-    remember: true,
-    redirectTo,
-  })
+  const prevUser = await getUserByAddress(account)
+
+  if (!prevUser) {
+    return redirect("/join")
+  } else {
+    return createUserSession({
+      request,
+      userAddress: account,
+      remember: true,
+      redirectTo,
+    })
+  }
 }
 
 export async function loader({ request }: LoaderArgs) {
